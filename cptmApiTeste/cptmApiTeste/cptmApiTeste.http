@@ -1,0 +1,6 @@
+@cptmApiTeste_HostAddress = http://localhost:5085
+
+GET {{cptmApiTeste_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
