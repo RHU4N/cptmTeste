@@ -1,5 +1,25 @@
-# Vue 3 + Vite
+# CPTM Demo
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## Executar em desenvolvimento
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+```bash
+npm.cmd install
+npm.cmd run dev
+```
+
+No modo dev, o proxy do Vite envia `/api` para `http://localhost:5085`.
+
+## Executar como PWA (build/preview)
+
+```bash
+npm.cmd run build
+npm.cmd run preview
+```
+
+Para build/PWA, configure a URL da API usando `.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5085
+```
+
+Você pode copiar de `.env.example`.

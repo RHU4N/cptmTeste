@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, watch, computed } from "vue"
+import { reactive, watch, computed, ref, onBeforeUnmount } from "vue"
 
 const props = defineProps({
   initialInspecao: {
@@ -21,22 +21,66 @@ const form = reactive({
   photo: null,
 })
 
+const photoInputKey = ref(0)
+const photoPreviewUrl = ref("")
+
 const isEditMode = computed(() => Boolean(props.initialInspecao?.id))
+const initialPhotoPreview = computed(() => {
+  if (props.initialInspecao?.photoUrl) {
+    return props.initialInspecao.photoUrl
+  }
+
+  if (props.initialInspecao?.photoBase64) {
+    return `data:image/jpeg;base64,${props.initialInspecao.photoBase64}`
+  }
+
+  return ""
+})
+
+const photoPreview = computed(() => photoPreviewUrl.value || initialPhotoPreview.value)
+const isPhotoRequired = computed(() => !photoPreview.value)
+
+function revokePreviewUrl() {
+  if (photoPreviewUrl.value.startsWith("blob:")) {
+    URL.revokeObjectURL(photoPreviewUrl.value)
+  }
+}
 
 watch(
   () => props.initialInspecao,
   (value) => {
+    revokePreviewUrl()
     form.titulo = value?.titulo ?? ""
     form.descricao = value?.descricao ?? ""
     form.data = value?.data ? new Date(value.data).toISOString().split("T")[0] : ""
     form.photo = null
+    photoPreviewUrl.value = ""
+    photoInputKey.value += 1
   },
   { immediate: true }
 )
 
+onBeforeUnmount(() => {
+  revokePreviewUrl()
+})
+
 function onFileChange(event) {
   const [file] = event.target.files
+  revokePreviewUrl()
   form.photo = file ?? null
+
+  if (file) {
+    photoPreviewUrl.value = URL.createObjectURL(file)
+  } else {
+    photoPreviewUrl.value = ""
+  }
+}
+
+function removerFoto() {
+  revokePreviewUrl()
+  form.photo = null
+  photoPreviewUrl.value = ""
+  photoInputKey.value += 1
 }
 
 function onSubmit() {
@@ -72,7 +116,21 @@ function onSubmit() {
 
       <div class="form-item">
         <label for="photo">Foto</label>
-        <input id="photo" type="file" accept="image/*" @change="onFileChange" required />
+        <input
+          :key="photoInputKey"
+          id="photo"
+          type="file"
+          accept="image/*"
+          @change="onFileChange"
+          :required="isPhotoRequired"
+        />
+      </div>
+
+      <div v-if="photoPreview" class="photo-preview-box">
+        <img :src="photoPreview" alt="Prévia da foto selecionada" class="photo-preview" />
+        <button type="button" class="secondary remove-photo" @click="removerFoto">
+          Remover foto
+        </button>
       </div>
 
       <div class="navigation">
@@ -108,6 +166,22 @@ function onSubmit() {
   box-sizing: border-box;
 }
 
+.photo-preview-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.photo-preview {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fafafa;
+}
+
 .navigation {
   display:flex;
   justify-content:flex-end;
@@ -130,8 +204,22 @@ function onSubmit() {
   background: #666;
 }
 
+.remove-photo {
+  align-self: flex-start;
+}
+
 .navigation button:disabled {
   opacity:0.5;
   cursor:not-allowed;
+}
+
+@media (min-width: 768px) {
+  .photo-preview {
+    max-height: 300px;
+  }
+
+  .photo-preview-box {
+    align-items: flex-start;
+  }
 }
 </style>

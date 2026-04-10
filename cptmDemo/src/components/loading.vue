@@ -3,15 +3,12 @@
     <img class="loader-logo" :src="logo" alt="Logo" />
     <h1 class="loader-title">CPTM X FATEC</h1>
 
-    <!-- container para spinner + GIF -->
+    <!-- loader local para funcionar também sem internet -->
     <div class="loader-animation">
       <div class="spinner"></div>
-      <img 
-        class="loader-gif" 
-        src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExd3o1MW82M2F4Y2xmZm90eHhlZDlycmpuOWxoZzN5N3IwYTEyamhyOSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/Uei7b3jIpgKbfV7PMp/giphy.gif" 
-        alt="Animação Loading"
-      />
+      <div class="loader-core"></div>
     </div>
+    <p class="loader-subtitle">Preparando o aplicativo...</p>
   </div>
 </template>
 
@@ -84,14 +81,24 @@ export default {
   left: 0;
 }
 
-/* GIF animado por cima do spinner */
-.loader-gif {
-  width: 60px;        /* metade do spinner para ficar centralizado */
-  height: auto;
+/* Núcleo visual no centro do loader */
+.loader-core {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f6f6f6 35%, #ea191f 100%);
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  box-shadow: 0 10px 20px rgba(234, 25, 31, 0.18);
+}
+
+.loader-subtitle {
+  margin-top: 18px;
+  color: #666;
+  font-size: 0.95rem;
+  text-align: center;
 }
 
 /* animação do spinner */
@@ -116,8 +123,13 @@ export default {
     height: 150px;
   }
 
-  .loader-gif {
-    width: 80px;
+  .loader-core {
+    width: 70px;
+    height: 70px;
+  }
+
+  .loader-subtitle {
+    font-size: 1rem;
   }
 }
 </style>
