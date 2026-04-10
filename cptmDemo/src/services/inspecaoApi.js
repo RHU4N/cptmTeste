@@ -244,7 +244,7 @@ async function request(url, options) {
 
     if (error instanceof TypeError) {
       throw new Error(
-        "Não foi possível alcançar a API. No build/PWA, configure VITE_API_BASE_URL (ex.: http://localhost:5085).",
+        "Não foi possível alcançar a API. No build/PWA, configure VITE_API_BASE_URL (ex.: http://localhost:5085) e deixe a cptmApiTeste em execução.",
       );
     }
 

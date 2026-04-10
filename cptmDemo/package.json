@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "dotnet run --project ../cptmApiTeste/cptmApiTeste/cptmApiTeste.csproj --launch-profile http",
+    "dev:full": "concurrently -k -n API,WEB -c yellow,cyan \"npm:dev:api\" \"npm:dev\"",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "preview:full": "concurrently -k -n API,PWA -c yellow,green \"npm:dev:api\" \"npm:preview\""
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -14,6 +17,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.2",
+    "concurrently": "^9.2.1",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0"
   }
