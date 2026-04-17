@@ -4,6 +4,22 @@
   box-sizing:border-box;
 }
 
+:root {
+  --brand-logo-size: 220px;
+  --header-logo-height: 48px;
+  --action-icon-size: 56px;
+  --preview-photo-height: 260px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --brand-logo-size: 240px;
+    --header-logo-height: 60px;
+    --action-icon-size: 70px;
+    --preview-photo-height: 300px;
+  }
+}
+
 .offline-banner {
   position: fixed;
   top: 0;

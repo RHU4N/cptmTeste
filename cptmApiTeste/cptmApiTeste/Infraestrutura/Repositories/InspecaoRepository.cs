@@ -15,7 +15,7 @@ namespace cptmApiTeste.Infraestrutura.Repositories
 
         public Inspecao? Get(int id)
         {
-            return _context.InspecaoDTO.Find(id);
+            return _context.InspecaoDTO.AsNoTracking().FirstOrDefault(x => x.id == id);
         }
 
         public IEnumerable<Inspecao> GetAll()
@@ -25,7 +25,13 @@ namespace cptmApiTeste.Infraestrutura.Repositories
 
         public void Update(Inspecao inspecao)
         {
-            _context.InspecaoDTO.Update(inspecao);
+            var local = _context.InspecaoDTO.Local.FirstOrDefault(x => x.id == inspecao.id);
+            if (local is not null)
+            {
+                _context.Entry(local).State = EntityState.Detached;
+            }
+
+            _context.Entry(inspecao).State = EntityState.Modified;
             _context.SaveChanges();
         }
 

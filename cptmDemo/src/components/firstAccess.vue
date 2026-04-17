@@ -45,7 +45,8 @@ function ativarConta() {
 }
 
 .logo{
-  width:200px;
+  width:var(--brand-logo-size);
+  max-width:100%;
   margin-bottom:20px;
 }
 
@@ -96,10 +97,6 @@ p{
 }
 
 @media (min-width:768px){
-  .logo{
-    width:250px;
-  }
-
   input, button{
     padding:14px;
     font-size:18px;

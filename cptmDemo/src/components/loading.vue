@@ -49,7 +49,8 @@ export default {
 }
 
 .loader-logo {
-  width: 200px;
+  width: var(--brand-logo-size);
+  max-width: 100%;
   height: auto;
   margin-bottom: 15px;
 }
@@ -110,10 +111,6 @@ export default {
 
 /* Responsividade */
 @media (min-width: 768px) {
-  .loader-logo {
-    width: 250px;
-  }
-
   .loader-title {
     font-size: 2.2rem;
   }

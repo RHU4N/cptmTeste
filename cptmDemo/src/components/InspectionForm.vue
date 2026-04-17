@@ -40,6 +40,22 @@ const initialPhotoPreview = computed(() => {
 const photoPreview = computed(() => photoPreviewUrl.value || initialPhotoPreview.value)
 const isPhotoRequired = computed(() => !photoPreview.value)
 
+function toDatetimeLocalValue(value) {
+  if (!value) {
+    return ""
+  }
+
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return ""
+  }
+
+  const pad = (number) => String(number).padStart(2, "0")
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function revokePreviewUrl() {
   if (photoPreviewUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(photoPreviewUrl.value)
@@ -52,7 +68,7 @@ watch(
     revokePreviewUrl()
     form.titulo = value?.titulo ?? ""
     form.descricao = value?.descricao ?? ""
-    form.data = value?.data ? new Date(value.data).toISOString().split("T")[0] : ""
+    form.data = toDatetimeLocalValue(value?.data)
     form.photo = null
     photoPreviewUrl.value = ""
     photoInputKey.value += 1
@@ -110,8 +126,8 @@ function onSubmit() {
       </div>
 
       <div class="form-item">
-        <label for="data">Data</label>
-        <input id="data" type="date" v-model="form.data" required />
+        <label for="data">Data e hora</label>
+        <input id="data" type="datetime-local" v-model="form.data" required />
       </div>
 
       <div class="form-item">
@@ -171,15 +187,19 @@ function onSubmit() {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 15px;
+  align-items: center;
 }
 
 .photo-preview {
   width: 100%;
-  max-height: 240px;
-  object-fit: cover;
+  max-width: 360px;
+  height: 240px;
+  object-fit: contain;
+  padding: 10px;
+  box-sizing: border-box;
   border-radius: 10px;
   border: 1px solid #ddd;
-  background: #fafafa;
+  background: #f8f8f8;
 }
 
 .navigation {
@@ -205,7 +225,7 @@ function onSubmit() {
 }
 
 .remove-photo {
-  align-self: flex-start;
+  align-self: center;
 }
 
 .navigation button:disabled {
@@ -215,11 +235,13 @@ function onSubmit() {
 
 @media (min-width: 768px) {
   .photo-preview {
-    max-height: 300px;
+    max-width: 420px;
+    height: 280px;
+    padding: 12px;
   }
 
   .photo-preview-box {
-    align-items: flex-start;
+    align-items: center;
   }
 }
 </style>

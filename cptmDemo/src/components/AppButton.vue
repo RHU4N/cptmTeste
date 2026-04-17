@@ -42,8 +42,8 @@ const props = defineProps({
 }
 
 .button-icon{
-  width:50px;
-  height:50px;
+  width:var(--action-icon-size);
+  height:var(--action-icon-size);
   object-fit:contain;
 }
 
@@ -59,11 +59,6 @@ const props = defineProps({
     height:180px;
     padding:25px;
     font-size:16px;
-  }
-
-  .button-icon{
-    width:70px;
-    height:70px;
   }
 
   .button-text{

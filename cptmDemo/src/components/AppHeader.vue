@@ -31,7 +31,7 @@ const props = defineProps({ title: { type: String, default: "Bem-vindo" } })
 }
 
 .app-header .logo{
-  height:40px;
+  height:var(--header-logo-height);
   cursor:pointer;
 }
 
@@ -64,7 +64,6 @@ const props = defineProps({ title: { type: String, default: "Bem-vindo" } })
   .app-header{
     padding:25px 40px;
   }
-  .app-header .logo{ height:60px; }
   .app-header .header-title{ font-size:24px; }
 }
 </style>

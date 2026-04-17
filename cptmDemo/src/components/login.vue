@@ -87,7 +87,8 @@ function primeiroAcesso() {
 
 /* Logo */
 .logo{
-  width:250px;
+  width:var(--brand-logo-size);
+  max-width:100%;
   margin-bottom:30px;
 }
 
@@ -154,10 +155,6 @@ function primeiroAcesso() {
 
 /* Responsivo para notebook / desktop */
 @media (min-width: 768px){
-  .logo{
-    width:220px;
-  }
-
   .login-box{
     max-width:400px;
   }
