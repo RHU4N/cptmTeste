@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue"
+import { ref, computed, onMounted, onUnmounted } from "vue"
 import AppHeader from "../components/AppHeader.vue"
 import AppButton from "../components/AppButton.vue"
 import InspectionList from "../components/InspectionList.vue"
@@ -93,6 +93,11 @@ async function carregarInspecoes() {
 
 onMounted(() => {
   carregarInspecoes()
+  window.addEventListener("online", carregarInspecoes)
+})
+
+onUnmounted(() => {
+  window.removeEventListener("online", carregarInspecoes)
 })
 
 function voltarTelaInicial() {
