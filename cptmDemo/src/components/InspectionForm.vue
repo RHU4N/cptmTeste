@@ -32,6 +32,7 @@ const locationMessage = ref("")
 const mapContainer = ref(null)
 let mapInstance = null
 let marker = null
+const GEO_ADDRESS_CACHE_KEY = "cptm.geo.reverse.v1"
 
 const isEditMode = computed(() => Boolean(props.initialInspecao?.id))
 const initialPhotoPreview = computed(() => {
@@ -141,6 +142,76 @@ function updateMarkerAndView(latitude, longitude, zoom = 16) {
   mapInstance.setView(coordinates, zoom)
 }
 
+function getCoordinateCacheKey(latitude, longitude) {
+  return `${latitude.toFixed(4)},${longitude.toFixed(4)}`
+}
+
+function readGeoAddressCache() {
+  try {
+    const raw = localStorage.getItem(GEO_ADDRESS_CACHE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function writeGeoAddressCache(cache) {
+  localStorage.setItem(GEO_ADDRESS_CACHE_KEY, JSON.stringify(cache))
+}
+
+function saveAddressInCache(latitude, longitude, address) {
+  if (!address) {
+    return
+  }
+
+  const cache = readGeoAddressCache()
+  cache[getCoordinateCacheKey(latitude, longitude)] = address
+  writeGeoAddressCache(cache)
+}
+
+function getAddressFromCache(latitude, longitude) {
+  const cache = readGeoAddressCache()
+  return cache[getCoordinateCacheKey(latitude, longitude)] || ""
+}
+
+function latLngToTile(latitude, longitude, zoom) {
+  const latRad = (latitude * Math.PI) / 180
+  const n = 2 ** zoom
+  const x = Math.floor(((longitude + 180) / 360) * n)
+  const y = Math.floor(
+    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n,
+  )
+
+  return { x, y }
+}
+
+async function cacheMapTilesAroundLocation(latitude, longitude, zoom = 16, radius = 1) {
+  if (!navigator.onLine) {
+    return
+  }
+
+  const center = latLngToTile(latitude, longitude, zoom)
+  const requests = []
+
+  for (let dx = -radius; dx <= radius; dx += 1) {
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      const x = center.x + dx
+      const y = center.y + dy
+      if (x < 0 || y < 0) {
+        continue
+      }
+
+      requests.push(fetch(`https://a.tile.openstreetmap.org/${zoom}/${x}/${y}.png`))
+    }
+  }
+
+  try {
+    await Promise.allSettled(requests)
+  } catch {
+    // Best effort cache warmup; failures are non-blocking.
+  }
+}
+
 function initOrUpdateMap() {
   if (!mapContainer.value || mapInstance) {
     if (mapInstance && hasCoordinates.value) {
@@ -152,7 +223,7 @@ function initOrUpdateMap() {
 
   mapInstance = L.map(mapContainer.value).setView([-23.55052, -46.633308], 12)
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  L.tileLayer("https://a.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(mapInstance)
 
@@ -163,6 +234,7 @@ function initOrUpdateMap() {
     updateMarkerAndView(form.latitude, form.longitude)
 
     await preencherEnderecoPorCoordenada(form.latitude, form.longitude)
+    await cacheMapTilesAroundLocation(form.latitude, form.longitude)
   })
 
   if (hasCoordinates.value) {
@@ -171,6 +243,20 @@ function initOrUpdateMap() {
 }
 
 async function preencherEnderecoPorCoordenada(latitude, longitude) {
+  const cachedAddress = getAddressFromCache(latitude, longitude)
+
+  if (!navigator.onLine && cachedAddress) {
+    form.localizacao = cachedAddress
+    locationMessage.value = "Localização recuperada do cache offline."
+    return
+  }
+
+  if (!navigator.onLine && !cachedAddress) {
+    form.localizacao = `${latitude}, ${longitude}`
+    locationMessage.value = "Sem internet para endereço detalhado. Usando coordenadas."
+    return
+  }
+
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
@@ -187,8 +273,15 @@ async function preencherEnderecoPorCoordenada(latitude, longitude) {
 
     const payload = await response.json()
     form.localizacao = payload.display_name || `${latitude}, ${longitude}`
+    saveAddressInCache(latitude, longitude, form.localizacao)
     locationMessage.value = "Localização preenchida automaticamente."
   } catch {
+    if (cachedAddress) {
+      form.localizacao = cachedAddress
+      locationMessage.value = "Localização recuperada do cache local."
+      return
+    }
+
     form.localizacao = `${latitude}, ${longitude}`
     locationMessage.value = "Não foi possível obter endereço detalhado."
   }
@@ -209,6 +302,7 @@ async function usarLocalizacaoAtual() {
         form.longitude = Number(position.coords.longitude.toFixed(6))
         updateMarkerAndView(form.latitude, form.longitude)
         await preencherEnderecoPorCoordenada(form.latitude, form.longitude)
+        await cacheMapTilesAroundLocation(form.latitude, form.longitude)
         resolve()
       },
       () => {

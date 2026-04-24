@@ -6,10 +6,7 @@
     <p v-else-if="!localInspections.length" class="message">Nenhuma inspeção cadastrada.</p>
 
     <ul>
-      <li
-        v-for="inspecao in localInspections"
-        :key="inspecao.id"
-      >
+      <li v-for="inspecao in localInspections" :key="inspecao.id">
         <div class="info">
           <span class="linha">{{ inspecao.titulo || "Sem título" }}</span>
           <span class="data-hora">{{ formatDate(inspecao.data) }}</span>
@@ -17,16 +14,14 @@
           <span class="descricao">{{ inspecao.descricao }}</span>
           <span v-if="hasLocation(inspecao)" class="location-text">{{ inspecao.localizacao }}</span>
 
-          <iframe
+          <InspectionLocationMap
             v-if="hasLocation(inspecao)"
-            class="inspection-map"
-            :src="getEmbedMapUrl(inspecao)"
-            title="Mapa da inspeção"
-            loading="lazy"
-          ></iframe>
+            :latitude="Number(inspecao.latitude)"
+            :longitude="Number(inspecao.longitude)"
+          />
 
           <a
-            v-if="hasLocation(inspecao)"
+            v-if="hasLocation(inspecao) && isOnline()"
             class="maps-link"
             :href="getGoogleMapsUrl(inspecao)"
             target="_blank"
@@ -46,39 +41,40 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed } from "vue"
+import InspectionLocationMap from "./InspectionLocationMap.vue"
 
 const props = defineProps({
   inspections: { type: Array, required: true },
   loading: { type: Boolean, default: false },
   showUser: { type: Boolean, default: false },
-});
+})
 
-const emit = defineEmits(["create", "edit", "delete"]);
+const emit = defineEmits(["create", "edit", "delete"])
 
-const localInspections = computed(() => props.inspections ?? []);
+const localInspections = computed(() => props.inspections ?? [])
 
 function criarInspecao() {
-  emit("create");
+  emit("create")
 }
 
 function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("pt-BR");
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString("pt-BR")
 }
 
 function hasLocation(inspecao) {
-  return Number.isFinite(Number(inspecao.latitude)) && Number.isFinite(Number(inspecao.longitude));
+  return Number.isFinite(Number(inspecao.latitude)) && Number.isFinite(Number(inspecao.longitude))
 }
 
 function getGoogleMapsUrl(inspecao) {
-  return `https://www.google.com/maps?q=${inspecao.latitude},${inspecao.longitude}`;
+  return `https://www.google.com/maps?q=${inspecao.latitude},${inspecao.longitude}`
 }
 
-function getEmbedMapUrl(inspecao) {
-  return `https://www.google.com/maps?q=${inspecao.latitude},${inspecao.longitude}&z=15&output=embed`;
+function isOnline() {
+  return navigator.onLine
 }
 </script>
 
@@ -143,15 +139,6 @@ li {
   margin-top: 6px;
   font-size: 0.9rem;
   color: #555;
-}
-
-.inspection-map {
-  margin-top: 8px;
-  width: 100%;
-  max-width: 420px;
-  height: 220px;
-  border: 0;
-  border-radius: 8px;
 }
 
 .maps-link {
