@@ -1,7 +1,13 @@
 using cptmApiTeste.Domain.Model.InspecaoAggregate;
+using cptmApiTeste.Infraestrutura;
 using cptmApiTeste.Infraestrutura.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<ConectContext>(options =>
+    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? "Data Source=localhost:1521/XEPDB1;User ID=RHUAN;Password=root"));
 
 // Add services to the container.
 
@@ -28,6 +34,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ConectContext>();
+    context.Database.Migrate();
+}
 
 app.UseCors("MyPolicy");
 

@@ -5,10 +5,15 @@ namespace cptmApiTeste.Infraestrutura.Repositories
 {
     public class InspecaoRepository : IInspecaoRepository
     {
-        private readonly ConectContext _context = new ConectContext();
+        private readonly ConectContext _context;
+
+        public InspecaoRepository(ConectContext context)
+        {
+            _context = context;
+        }
+
         public void Add(Inspecao inspecao)
         {
-            _context.Database.EnsureCreated();
             _context.InspecaoDTO.Add(inspecao);
             _context.SaveChanges();
         }

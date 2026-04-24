@@ -5,11 +5,19 @@ namespace cptmApiTeste.Infraestrutura
 {
     public class ConectContext : DbContext
     {
+        public ConectContext(DbContextOptions<ConectContext> options) : base(options)
+        {
+        }
+
         public DbSet<Inspecao> InspecaoDTO { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseOracle("Data Source=localhost:1521/XEPDB1;User ID=RHUAN; Password=root");
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseOracle("Data Source=localhost:1521/XEPDB1;User ID=RHUAN; Password=root");
+            }
+
             //"Data Source=MEU_HOST:1521/MEU_SERVICO;User Id=MEU_USUARIO;Password=MINHA_SENHA;"
         }
 
