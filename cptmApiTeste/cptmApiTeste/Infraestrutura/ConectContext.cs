@@ -29,6 +29,9 @@ namespace cptmApiTeste.Infraestrutura
            modelBuilder.Entity<Inspecao>().Property(e => e.descricao).HasColumnName("DESCRICAO");
            modelBuilder.Entity<Inspecao>().Property(e => e.data).HasColumnName("DATA");
            modelBuilder.Entity<Inspecao>().Property(e => e.photo).HasColumnName("PHOTO").HasColumnType("BLOB").IsRequired(false);
+           modelBuilder.Entity<Inspecao>().Property(e => e.localizacao).HasColumnName("LOCALIZACAO").IsRequired(false);
+           modelBuilder.Entity<Inspecao>().Property(e => e.latitude).HasColumnName("LATITUDE").HasColumnType("BINARY_DOUBLE").IsRequired(false);
+           modelBuilder.Entity<Inspecao>().Property(e => e.longitude).HasColumnName("LONGITUDE").HasColumnType("BINARY_DOUBLE").IsRequired(false);
 
         }
     }

@@ -1,5 +1,7 @@
 <script setup>
-import { reactive, watch, computed, ref, onBeforeUnmount } from "vue"
+import { reactive, watch, computed, ref, onBeforeUnmount, onMounted } from "vue"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
 
 const props = defineProps({
   initialInspecao: {
@@ -19,10 +21,17 @@ const form = reactive({
   descricao: "",
   data: "",
   photo: null,
+  localizacao: "",
+  latitude: null,
+  longitude: null,
 })
 
 const photoInputKey = ref(0)
 const photoPreviewUrl = ref("")
+const locationMessage = ref("")
+const mapContainer = ref(null)
+let mapInstance = null
+let marker = null
 
 const isEditMode = computed(() => Boolean(props.initialInspecao?.id))
 const initialPhotoPreview = computed(() => {
@@ -39,6 +48,14 @@ const initialPhotoPreview = computed(() => {
 
 const photoPreview = computed(() => photoPreviewUrl.value || initialPhotoPreview.value)
 const isPhotoRequired = computed(() => !photoPreview.value)
+const hasCoordinates = computed(() => Number.isFinite(form.latitude) && Number.isFinite(form.longitude))
+const googleMapsUrl = computed(() => {
+  if (!hasCoordinates.value) {
+    return ""
+  }
+
+  return `https://www.google.com/maps?q=${form.latitude},${form.longitude}`
+})
 
 function toDatetimeLocalValue(value) {
   if (!value) {
@@ -64,21 +81,144 @@ function revokePreviewUrl() {
 
 watch(
   () => props.initialInspecao,
-  (value) => {
+  async (value) => {
     revokePreviewUrl()
     form.titulo = value?.titulo ?? ""
     form.descricao = value?.descricao ?? ""
     form.data = toDatetimeLocalValue(value?.data)
+    form.localizacao = value?.localizacao ?? ""
+    form.latitude = toNumberOrNull(value?.latitude)
+    form.longitude = toNumberOrNull(value?.longitude)
     form.photo = null
     photoPreviewUrl.value = ""
     photoInputKey.value += 1
+
+    initOrUpdateMap()
+
+    if (!isEditMode.value && !hasCoordinates.value) {
+      await usarLocalizacaoAtual()
+    }
   },
   { immediate: true }
 )
 
+onMounted(() => {
+  initOrUpdateMap()
+})
+
 onBeforeUnmount(() => {
   revokePreviewUrl()
+
+  if (mapInstance) {
+    mapInstance.remove()
+    mapInstance = null
+    marker = null
+  }
 })
+
+function toNumberOrNull(value) {
+  if (value === null || value === undefined || value === "") {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function updateMarkerAndView(latitude, longitude, zoom = 16) {
+  if (!mapInstance) {
+    return
+  }
+
+  const coordinates = [latitude, longitude]
+
+  if (!marker) {
+    marker = L.marker(coordinates).addTo(mapInstance)
+  } else {
+    marker.setLatLng(coordinates)
+  }
+
+  mapInstance.setView(coordinates, zoom)
+}
+
+function initOrUpdateMap() {
+  if (!mapContainer.value || mapInstance) {
+    if (mapInstance && hasCoordinates.value) {
+      updateMarkerAndView(form.latitude, form.longitude)
+    }
+
+    return
+  }
+
+  mapInstance = L.map(mapContainer.value).setView([-23.55052, -46.633308], 12)
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "&copy; OpenStreetMap contributors",
+  }).addTo(mapInstance)
+
+  mapInstance.on("click", async (event) => {
+    const { lat, lng } = event.latlng
+    form.latitude = Number(lat.toFixed(6))
+    form.longitude = Number(lng.toFixed(6))
+    updateMarkerAndView(form.latitude, form.longitude)
+
+    await preencherEnderecoPorCoordenada(form.latitude, form.longitude)
+  })
+
+  if (hasCoordinates.value) {
+    updateMarkerAndView(form.latitude, form.longitude)
+  }
+}
+
+async function preencherEnderecoPorCoordenada(latitude, longitude) {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+      {
+        headers: {
+          Accept: "application/json",
+        },
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error("Falha ao resolver endereço")
+    }
+
+    const payload = await response.json()
+    form.localizacao = payload.display_name || `${latitude}, ${longitude}`
+    locationMessage.value = "Localização preenchida automaticamente."
+  } catch {
+    form.localizacao = `${latitude}, ${longitude}`
+    locationMessage.value = "Não foi possível obter endereço detalhado."
+  }
+}
+
+async function usarLocalizacaoAtual() {
+  locationMessage.value = "Capturando localização atual..."
+
+  if (!navigator.geolocation) {
+    locationMessage.value = "Geolocalização não suportada neste dispositivo."
+    return
+  }
+
+  await new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        form.latitude = Number(position.coords.latitude.toFixed(6))
+        form.longitude = Number(position.coords.longitude.toFixed(6))
+        updateMarkerAndView(form.latitude, form.longitude)
+        await preencherEnderecoPorCoordenada(form.latitude, form.longitude)
+        resolve()
+      },
+      () => {
+        locationMessage.value = "Não foi possível capturar sua localização atual."
+        resolve()
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  })
+}
 
 function onFileChange(event) {
   const [file] = event.target.files
@@ -100,12 +240,20 @@ function removerFoto() {
 }
 
 function onSubmit() {
+  if (!hasCoordinates.value || !form.localizacao.trim()) {
+    locationMessage.value = "Preencha a localização antes de salvar."
+    return
+  }
+
   emit("finalizar", {
     id: props.initialInspecao?.id ?? null,
     titulo: form.titulo,
     descricao: form.descricao,
     data: form.data,
     photo: form.photo,
+    localizacao: form.localizacao,
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
   })
 }
 </script>
@@ -140,6 +288,24 @@ function onSubmit() {
           @change="onFileChange"
           :required="isPhotoRequired"
         />
+      </div>
+
+      <div class="form-item">
+        <label for="localizacao">Localização</label>
+        <input id="localizacao" type="text" v-model="form.localizacao" required />
+      </div>
+
+      <div class="form-item location-actions">
+        <button type="button" class="secondary" @click="usarLocalizacaoAtual">
+          {{ isEditMode ? "Atualizar localização" : "Usar minha localização" }}
+        </button>
+        <a v-if="googleMapsUrl" :href="googleMapsUrl" target="_blank" rel="noreferrer">Abrir no Google Maps</a>
+      </div>
+
+      <p v-if="locationMessage" class="location-message">{{ locationMessage }}</p>
+
+      <div class="form-item map-wrapper">
+        <div ref="mapContainer" class="map-container"></div>
       </div>
 
       <div v-if="photoPreview" class="photo-preview-box">
@@ -180,6 +346,29 @@ function onSubmit() {
   border-radius:6px;
   border:1px solid #ccc;
   box-sizing: border-box;
+}
+
+.location-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.location-message {
+  color: #555;
+  margin-bottom: 12px;
+}
+
+.map-wrapper {
+  margin-top: 10px;
+}
+
+.map-container {
+  width: 100%;
+  height: 240px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
 }
 
 .photo-preview-box {

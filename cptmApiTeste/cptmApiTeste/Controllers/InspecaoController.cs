@@ -2,6 +2,7 @@
 using cptmApiTeste.Domain.DTOs;
 using cptmApiTeste.Domain.Model.InspecaoAggregate;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 
 namespace cptmApiTeste.Controllers
 {
@@ -34,6 +35,11 @@ namespace cptmApiTeste.Controllers
         public IActionResult GetFoto(int id)
         {
             var inspecao = _inspecaopository.Get(id);
+            if (inspecao is null || inspecao.photo is null || inspecao.photo.Length == 0)
+            {
+                return NotFound();
+            }
+
             return File(inspecao.photo, "image/*");
         }
 
@@ -46,7 +52,14 @@ namespace cptmApiTeste.Controllers
                 return BadRequest("Foto obrigatória.");
             }
 
-            var dto = ToDto(inspecaoViewModel);
+            if (!TryParseCoordinate(inspecaoViewModel.latitude, out var latitude)
+                || !TryParseCoordinate(inspecaoViewModel.longitude, out var longitude)
+                || !IsValidLocation(latitude, longitude, inspecaoViewModel.localizacao))
+            {
+                return BadRequest("Localização inválida.");
+            }
+
+            var dto = ToDto(inspecaoViewModel, latitude, longitude);
             var inspecao = ToEntity(dto);
 
             _inspecaopository.Add(inspecao);
@@ -69,7 +82,14 @@ namespace cptmApiTeste.Controllers
                 return BadRequest("Foto obrigatória.");
             }
 
-            var dto = ToDto(inspecaoViewModel);
+            if (!TryParseCoordinate(inspecaoViewModel.latitude, out var latitude)
+                || !TryParseCoordinate(inspecaoViewModel.longitude, out var longitude)
+                || !IsValidLocation(latitude, longitude, inspecaoViewModel.localizacao))
+            {
+                return BadRequest("Localização inválida.");
+            }
+
+            var dto = ToDto(inspecaoViewModel, latitude, longitude);
             dto.id = id;
             var inspecao = ToEntity(dto);
 
@@ -99,11 +119,14 @@ namespace cptmApiTeste.Controllers
                 titulo = inspecao.titulo,
                 descricao = inspecao.descricao,
                 data = inspecao.data,
+                localizacao = inspecao.localizacao,
+                latitude = inspecao.latitude,
+                longitude = inspecao.longitude,
                 photo = inspecao.photo
             };
         }
 
-        private static InspecaoDTO ToDto(inspecaoViewModel inspecaoViewModel)
+        private static InspecaoDTO ToDto(inspecaoViewModel inspecaoViewModel, double latitude, double longitude)
         {
             using var memoryStream = new MemoryStream();
             inspecaoViewModel.Photo.CopyTo(memoryStream);
@@ -113,6 +136,9 @@ namespace cptmApiTeste.Controllers
                 titulo = inspecaoViewModel.titulo,
                 descricao = inspecaoViewModel.descricao,
                 data = inspecaoViewModel.data,
+                localizacao = inspecaoViewModel.localizacao,
+                latitude = latitude,
+                longitude = longitude,
                 photo = memoryStream.ToArray()
             };
         }
@@ -120,8 +146,27 @@ namespace cptmApiTeste.Controllers
         private static Inspecao ToEntity(InspecaoDTO dto)
         {
             return dto.id == 0
-                ? new Inspecao(dto.titulo, dto.descricao, dto.data, dto.photo)
-                : new Inspecao(dto.id, dto.titulo, dto.descricao, dto.data, dto.photo);
+                ? new Inspecao(dto.titulo, dto.descricao, dto.data, dto.photo, dto.localizacao, dto.latitude, dto.longitude)
+                : new Inspecao(dto.id, dto.titulo, dto.descricao, dto.data, dto.photo, dto.localizacao, dto.latitude, dto.longitude);
+        }
+
+        private static bool IsValidLocation(double latitude, double longitude, string? localizacao)
+        {
+            return latitude is >= -90 and <= 90
+                && longitude is >= -180 and <= 180
+                && !string.IsNullOrWhiteSpace(localizacao);
+        }
+
+        private static bool TryParseCoordinate(string? value, out double coordinate)
+        {
+            coordinate = 0;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            var normalized = value.Trim().Replace(',', '.');
+            return double.TryParse(normalized, NumberStyles.Float, CultureInfo.InvariantCulture, out coordinate);
         }
     }
 }

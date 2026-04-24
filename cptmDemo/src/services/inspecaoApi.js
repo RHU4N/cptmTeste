@@ -81,6 +81,9 @@ function buildLocalItemFromPayload(id, payload) {
     titulo: payload.titulo,
     descricao: payload.descricao,
     data: dateIso,
+    localizacao: payload.localizacao,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
     usuario: "offline",
     photoBase64: payload.photoDataUrl ? payload.photoDataUrl.split(",")[1] ?? null : null,
   };
@@ -105,6 +108,9 @@ function applyOperationToList(list, operation) {
         titulo: operation.payload.titulo,
         descricao: operation.payload.descricao,
         data: operation.payload.data,
+        localizacao: operation.payload.localizacao,
+        latitude: operation.payload.latitude,
+        longitude: operation.payload.longitude,
         photoBase64: operation.payload.photoDataUrl
           ? operation.payload.photoDataUrl.split(",")[1] ?? item.photoBase64
           : item.photoBase64,
@@ -139,6 +145,9 @@ async function serializePayload(payload) {
     titulo: payload.titulo,
     descricao: payload.descricao,
     data: payload.data,
+    localizacao: payload.localizacao,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
     photoDataUrl,
   };
 }
@@ -156,6 +165,9 @@ async function deserializePayload(payload, filenamePrefix) {
     titulo: payload.titulo,
     descricao: payload.descricao,
     data: payload.data,
+    localizacao: payload.localizacao,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
     photo: payload.photoDataUrl ? await dataUrlToFile(payload.photoDataUrl, filenamePrefix) : null,
   };
 }
@@ -306,6 +318,9 @@ function toFormData(payload) {
   formData.append("titulo", payload.titulo);
   formData.append("descricao", payload.descricao);
   formData.append("data", payload.data);
+  formData.append("localizacao", payload.localizacao);
+  formData.append("latitude", payload.latitude);
+  formData.append("longitude", payload.longitude);
 
   if (payload.photo) {
     formData.append("Photo", payload.photo);

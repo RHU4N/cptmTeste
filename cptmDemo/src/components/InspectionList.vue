@@ -15,6 +15,25 @@
           <span class="data-hora">{{ formatDate(inspecao.data) }}</span>
           <span v-if="showUser" class="user">{{ inspecao.usuario }}</span>
           <span class="descricao">{{ inspecao.descricao }}</span>
+          <span v-if="hasLocation(inspecao)" class="location-text">{{ inspecao.localizacao }}</span>
+
+          <iframe
+            v-if="hasLocation(inspecao)"
+            class="inspection-map"
+            :src="getEmbedMapUrl(inspecao)"
+            title="Mapa da inspeção"
+            loading="lazy"
+          ></iframe>
+
+          <a
+            v-if="hasLocation(inspecao)"
+            class="maps-link"
+            :href="getGoogleMapsUrl(inspecao)"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Abrir no Google Maps
+          </a>
         </div>
 
         <div class="actions">
@@ -48,6 +67,18 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString("pt-BR");
+}
+
+function hasLocation(inspecao) {
+  return Number.isFinite(Number(inspecao.latitude)) && Number.isFinite(Number(inspecao.longitude));
+}
+
+function getGoogleMapsUrl(inspecao) {
+  return `https://www.google.com/maps?q=${inspecao.latitude},${inspecao.longitude}`;
+}
+
+function getEmbedMapUrl(inspecao) {
+  return `https://www.google.com/maps?q=${inspecao.latitude},${inspecao.longitude}&z=15&output=embed`;
 }
 </script>
 
@@ -106,6 +137,32 @@ li {
 
 .descricao {
   margin-top: 5px;
+}
+
+.location-text {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.inspection-map {
+  margin-top: 8px;
+  width: 100%;
+  max-width: 420px;
+  height: 220px;
+  border: 0;
+  border-radius: 8px;
+}
+
+.maps-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #ea191f;
+  text-decoration: none;
+}
+
+.maps-link:hover {
+  text-decoration: underline;
 }
 
 .actions button {
