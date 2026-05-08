@@ -4,14 +4,15 @@ import Loader from "./components/loading.vue"
 import Login from "./components/login.vue"
 import User from "./components/user.vue"
 import Admin from "./components/admin.vue"
-import PrimeiroAcesso from "./components/firstAccess.vue"
+import { getAuthSession } from "./services/authApi"
+import { clearAuthSession } from "./services/authApi"
 import {
   getPendingInspecaoCount,
   listenPendingInspecoesChange,
 } from "./services/inspecaoApi"
 
 const loading = ref(true)
-const currentScreen = ref("login") // login | user | admin | first-access
+const currentScreen = ref("login") // login | user | admin
 const isOnline = ref(navigator.onLine)
 const pendingInspecoes = ref(getPendingInspecaoCount())
 let stopListeningPending = null
@@ -22,6 +23,13 @@ function updateOnlineStatus() {
 
 // Loader inicial 3 segundos
 onMounted(() => {
+  const session = getAuthSession()
+  if (session?.role === "admin") {
+    currentScreen.value = "admin"
+  } else if (session?.role === "user") {
+    currentScreen.value = "user"
+  }
+
   window.addEventListener("online", updateOnlineStatus)
   window.addEventListener("offline", updateOnlineStatus)
   stopListeningPending = listenPendingInspecoesChange(() => {
@@ -45,6 +53,11 @@ onUnmounted(() => {
 // Função que muda de tela
 function changeScreen(screen) {
   currentScreen.value = screen
+}
+
+function onLogout(){
+  clearAuthSession()
+  currentScreen.value = "login"
 }
 
 const offlineMessage = computed(() => {
@@ -73,17 +86,10 @@ const offlineMessage = computed(() => {
   <!-- Login -->
   <Login 
     v-else-if="currentScreen === 'login'" 
-    @login-success="changeScreen" 
-    @first-access="() => changeScreen('first-access')"
-  />
-
-  <!-- Primeiro Acesso -->
-  <PrimeiroAcesso 
-    v-else-if="currentScreen === 'first-access'" 
-    @activation-success="() => changeScreen('user')"
+    @login-success="changeScreen"
   />
 
   <!-- Telas do usuário e admin -->
-  <User v-else-if="currentScreen === 'user'" />
-  <Admin v-else-if="currentScreen === 'admin'" />
+  <User v-else-if="currentScreen === 'user'" @logout="onLogout" />
+  <Admin v-else-if="currentScreen === 'admin'" @logout="onLogout" />
 </template>

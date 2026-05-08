@@ -20,16 +20,44 @@ namespace cptmApiTeste.Infraestrutura.Repositories
 
         public Inspecao? Get(int id)
         {
-            return _context.InspecaoDTO.AsNoTracking().FirstOrDefault(x => x.id == id);
+            return _context.InspecaoDTO
+                .AsNoTracking()
+                .FirstOrDefault(x => x.id == id);
+        }
+
+        public Inspecao? Get(int id, int usuarioId)
+        {
+            return _context.InspecaoDTO
+                .AsNoTracking()
+                .FirstOrDefault(x => x.id == id && x.usuarioId == usuarioId);
+        }
+
+        public IEnumerable<Inspecao> GetAllByUsuario(int usuarioId)
+        {
+            return _context.InspecaoDTO
+                .AsNoTracking()
+                .Where(x => x.usuarioId == usuarioId)
+                .ToList();
         }
 
         public IEnumerable<Inspecao> GetAll()
         {
-            return _context.InspecaoDTO.ToList();
+            return _context.InspecaoDTO
+                .AsNoTracking()
+                .ToList();
         }
 
-        public void Update(Inspecao inspecao)
+        public bool Update(Inspecao inspecao, int usuarioId)
         {
+            var exists = _context.InspecaoDTO
+                .AsNoTracking()
+                .Count(x => x.id == inspecao.id && x.usuarioId == usuarioId) > 0;
+
+            if (!exists)
+            {
+                return false;
+            }
+
             var local = _context.InspecaoDTO.Local.FirstOrDefault(x => x.id == inspecao.id);
             if (local is not null)
             {
@@ -38,18 +66,20 @@ namespace cptmApiTeste.Infraestrutura.Repositories
 
             _context.Entry(inspecao).State = EntityState.Modified;
             _context.SaveChanges();
+            return true;
         }
 
-        public void Delete(int id)
+        public bool Delete(int id, int usuarioId)
         {
-            var inspecao = _context.InspecaoDTO.Find(id);
+            var inspecao = _context.InspecaoDTO.FirstOrDefault(x => x.id == id && x.usuarioId == usuarioId);
             if (inspecao is null)
             {
-                return;
+                return false;
             }
 
             _context.InspecaoDTO.Remove(inspecao);
             _context.SaveChanges();
+            return true;
         }
     }
 }

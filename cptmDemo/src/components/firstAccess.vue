@@ -2,12 +2,15 @@
   <div class="first-access-container">
     <img :src="logo" class="logo" alt="Logo" />
 
-    <h2>Ativação de Conta</h2>
-    <p>Insira o código de ativação fornecido pelo administrador para liberar sua conta.</p>
+    <h2>Primeiro Acesso</h2>
+    <p>Crie seu usuário para acessar o sistema.</p>
 
-    <input v-model="activationCode" type="text" placeholder="Código de ativação" @keyup.enter="ativarConta" />
+    <input v-model="username" type="text" placeholder="Usuário" />
+    <input v-model="password" type="password" placeholder="Senha" @keyup.enter="registrar" />
 
-    <button @click="ativarConta" >Ativar</button>
+    <input v-model="activationCode" type="text" placeholder="Código de ativação" @keyup.enter="registrar" />
+
+    <button :disabled="loading" @click="registrar">{{ loading ? "Ativando..." : "Ativar" }}</button>
 
     <p class="support">
       Não recebeu o código? <a href="#">Contate o suporte</a>
@@ -18,17 +21,30 @@
 <script setup>
 import { ref } from "vue"
 import logo from "../assets/logo.png"
+import { register as registerApi } from "../services/authApi"
 
 const emit = defineEmits(["activation-success"])
 
+const username = ref("")
+const password = ref("")
 const activationCode = ref("")
+const loading = ref(false)
 
-function ativarConta() {
-  if(activationCode.value === "1234") { // Exemplo de código válido
+async function registrar() {
+  if (!username.value.trim() || !password.value.trim() || !activationCode.value.trim()) {
+    alert("Preencha usuário, senha e código de ativação")
+    return
+  }
+
+  loading.value = true
+  try {
+    const session = await registerApi(username.value.trim(), password.value, activationCode.value.trim())
     alert("Conta ativada com sucesso!")
-    emit("activation-success") // App.vue pode mudar para tela User/Admin
-  } else {
-    alert("Código inválido")
+    emit("activation-success", session.role)
+  } catch (error) {
+    alert(error.message || "Não foi possível ativar conta")
+  } finally {
+    loading.value = false
   }
 }
 </script>

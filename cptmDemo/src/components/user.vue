@@ -2,9 +2,9 @@
   <div class="user-container">
 <AppHeader 
   :title="tituloHeader" 
-  @open-configs="abrirConfigs" 
   @click-logo="voltarTelaInicial"
-/>
+  @logout="handleLogout"
+/> 
 
     <main class="user-content">
       <p v-if="erro" class="erro-api">{{ erro }}</p>
@@ -60,6 +60,14 @@ import {
 
 import inspecaoIcon from "../assets/inspecao.png"
 import historicoIcon from "../assets/historico.png"
+import { clearAuthSession } from "../services/authApi"
+
+const emit = defineEmits(["logout"])
+
+function handleLogout(){
+  clearAuthSession()
+  emit("logout")
+}
 
 const abrindoFormulario = ref(false)
 const abrindoHistorico = ref(false)
