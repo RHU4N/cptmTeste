@@ -1,3 +1,5 @@
+import { getAccessToken } from "./authApi";
+
 const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 const apiBaseUrl = configuredApiBaseUrl ?? (import.meta.env.DEV ? "" : "http://localhost:5085");
 const BASE_URL = `${apiBaseUrl}/api/Inspecao`;
@@ -245,7 +247,19 @@ function getProjectedCache() {
 
 async function request(url, options) {
   try {
-    const response = await fetch(url, options);
+    const token = getAccessToken();
+    const headers = {
+      ...(options?.headers ?? {}),
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
     return parseResponse(response);
   } catch (error) {
     if (!navigator.onLine) {

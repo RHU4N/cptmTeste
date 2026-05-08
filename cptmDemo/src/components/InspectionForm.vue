@@ -58,6 +58,8 @@ const googleMapsUrl = computed(() => {
   return `https://www.google.com/maps?q=${form.latitude},${form.longitude}`
 })
 
+const autoUpdate = ref(true)
+
 function toDatetimeLocalValue(value) {
   if (!value) {
     return ""
@@ -74,6 +76,13 @@ function toDatetimeLocalValue(value) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+function getCurrentDatetimeLocal() {
+  const now = new Date()
+  const pad = (number) => String(number).padStart(2, "0")
+
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+}
+
 function revokePreviewUrl() {
   if (photoPreviewUrl.value.startsWith("blob:")) {
     URL.revokeObjectURL(photoPreviewUrl.value)
@@ -86,7 +95,7 @@ watch(
     revokePreviewUrl()
     form.titulo = value?.titulo ?? ""
     form.descricao = value?.descricao ?? ""
-    form.data = toDatetimeLocalValue(value?.data)
+    form.data = value?.data ? toDatetimeLocalValue(value.data) : getCurrentDatetimeLocal()
     form.localizacao = value?.localizacao ?? ""
     form.latitude = toNumberOrNull(value?.latitude)
     form.longitude = toNumberOrNull(value?.longitude)
@@ -102,6 +111,54 @@ watch(
   },
   { immediate: true }
 )
+
+watch([
+  () => form.latitude,
+  () => form.longitude,
+], async ([lat, lng]) => {
+  if (!autoUpdate.value) {
+    return
+  }
+
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    updateMarkerAndView(lat, lng)
+
+    try {
+      await preencherEnderecoPorCoordenada(lat, lng)
+    } catch {
+      // ignore reverse lookup errors
+    }
+
+    try {
+      await cacheMapTilesAroundLocation(lat, lng)
+    } catch {
+      // best-effort
+    }
+  }
+})
+
+async function applyCoordinates() {
+  const lat = form.latitude
+  const lng = form.longitude
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    locationMessage.value = "Coordenadas inválidas."
+    return
+  }
+
+  updateMarkerAndView(lat, lng)
+
+  try {
+    await preencherEnderecoPorCoordenada(lat, lng)
+  } catch {
+    // ignore
+  }
+
+  try {
+    await cacheMapTilesAroundLocation(lat, lng)
+  } catch {
+    // ignore
+  }
+}
 
 onMounted(() => {
   initOrUpdateMap()
@@ -334,7 +391,7 @@ function removerFoto() {
 }
 
 function onSubmit() {
-  if (!hasCoordinates.value || !form.localizacao.trim()) {
+  if (!(hasCoordinates.value || form.localizacao.trim())) {
     locationMessage.value = "Preencha a localização antes de salvar."
     return
   }
@@ -387,6 +444,18 @@ function onSubmit() {
       <div class="form-item">
         <label for="localizacao">Localização</label>
         <input id="localizacao" type="text" v-model="form.localizacao" required />
+      </div>
+
+      <div class="form-item coords-inputs">
+        <label>Coordenadas (opcional)</label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input id="latitude" type="number" step="any" v-model.number="form.latitude" placeholder="Latitude (ex: -23.550520)" @blur="!autoUpdate && applyCoordinates()" />
+          <input id="longitude" type="number" step="any" v-model.number="form.longitude" placeholder="Longitude (ex: -46.633308)" @blur="!autoUpdate && applyCoordinates()" />
+          <label style="display:flex;align-items:center;gap:6px;margin-left:8px;">
+            <input type="checkbox" v-model="autoUpdate" /> Atualizar automaticamente
+          </label>
+          <button v-if="!autoUpdate" type="button" class="secondary" @click="applyCoordinates">Aplicar coordenadas</button>
+        </div>
       </div>
 
       <div class="form-item location-actions">

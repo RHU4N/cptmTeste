@@ -3,8 +3,8 @@
     <!-- Header -->
     <AppHeader 
       :title="tituloHeader" 
-      @open-configs="abrirConfigs"
       @click-logo="voltarTelaInicial"
+      @logout="handleLogout"
     />
 
     <main class="admin-content">
@@ -88,6 +88,14 @@ import InspectionForm from "../components/InspectionForm.vue"
 import Historico from "./Historico.vue"
 import AdminUsers from "./AdminUsers.vue"
 import Mapa from "../components/mapa.vue"
+import { clearAuthSession } from "../services/authApi"
+
+const emit = defineEmits(["logout"])
+
+function handleLogout(){
+  clearAuthSession()
+  emit("logout")
+}
 import {
   listInspecoes,
   createInspecao,

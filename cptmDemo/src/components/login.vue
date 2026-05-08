@@ -28,12 +28,7 @@
       </div>
 
       <!-- Botão Entrar -->
-      <button @click="login">Entrar</button>
-
-      <!-- Botão Primeiro Acesso -->
-      <button class="first-access" @click="primeiroAcesso">
-        Primeiro Acesso
-      </button>
+      <button :disabled="loggingIn" @click="login">{{ loggingIn ? "Entrando..." : "Entrar" }}</button>
     </div>
   </div>
 </template>
@@ -41,13 +36,15 @@
 <script setup>
 import { ref } from "vue"
 import logo from "../assets/logo.png"
+import { login as loginApi } from "../services/authApi"
 
 // Emite eventos para App.vue controlar a tela
-const emit = defineEmits(["login-success", "first-access"])
+const emit = defineEmits(["login-success"])
 
 const user = ref("")
 const password = ref("")
 const passwordInput = ref(null)
+const loggingIn = ref(false)
 
 // Foca no input de senha ao apertar Enter no usuário
 function focusPassword() {
@@ -55,21 +52,21 @@ function focusPassword() {
 }
 
 // Função login
-function login() {
-  if(user.value === "admin" && password.value === "admin") {
-    emit("login-success","admin")
+async function login() {
+  if (!user.value.trim() || !password.value.trim()) {
+    alert("Informe usuário e senha")
+    return
   }
-  else if(user.value === "user" && password.value === "user") {
-    emit("login-success","user")
-  }
-  else{
-    alert("Usuário ou senha incorretos")
-  }
-}
 
-// Botão Primeiro Acesso
-function primeiroAcesso() {
-  emit("first-access")
+  loggingIn.value = true
+  try {
+    const session = await loginApi(user.value.trim(), password.value)
+    emit("login-success", session.role)
+  } catch (error) {
+    alert(error.message || "Usuário ou senha incorretos")
+  } finally {
+    loggingIn.value = false
+  }
 }
 </script>
 
@@ -142,17 +139,6 @@ function primeiroAcesso() {
   opacity:0.9;
 }
 
-/* Botão Primeiro Acesso */
-.login-box button.first-access{
-  background:#1AEBC7;
-  margin-top:5px;
-  font-size:14px;
-}
-
-.login-box button.first-access:hover{
-  opacity:0.8;
-}
-
 /* Responsivo para notebook / desktop */
 @media (min-width: 768px){
   .login-box{
@@ -170,10 +156,6 @@ function primeiroAcesso() {
   }
 
   .login-links a{
-    font-size:16px;
-  }
-
-  .login-box button.first-access{
     font-size:16px;
   }
 }

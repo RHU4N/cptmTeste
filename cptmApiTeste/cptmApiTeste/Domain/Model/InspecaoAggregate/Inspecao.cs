@@ -31,7 +31,10 @@ namespace cptmApiTeste.Domain.Model.InspecaoAggregate
         [Column("LONGITUDE")]
         public double? longitude { get; private set; }
 
-        public Inspecao(string titulo, string descricao, DateTime data, byte[] photo, string? localizacao, double? latitude, double? longitude)
+        [Column("USUARIO_ID")]
+        public int? usuarioId { get; private set; }
+
+        public Inspecao(string titulo, string descricao, DateTime data, byte[] photo, string? localizacao, double? latitude, double? longitude, int usuarioId)
         {
             this.titulo = titulo ?? throw new ArgumentNullException(nameof(titulo));
             this.descricao = descricao ?? throw new ArgumentNullException(nameof(descricao));
@@ -40,9 +43,10 @@ namespace cptmApiTeste.Domain.Model.InspecaoAggregate
             this.localizacao = localizacao;
             this.latitude = latitude;
             this.longitude = longitude;
+            this.usuarioId = usuarioId;
         }
 
-        public Inspecao(int id, string titulo, string descricao, DateTime data, byte[] photo, string? localizacao, double? latitude, double? longitude)
+        public Inspecao(int id, string titulo, string descricao, DateTime data, byte[] photo, string? localizacao, double? latitude, double? longitude, int usuarioId)
         {
             this.id = id;
             this.titulo = titulo ?? throw new ArgumentNullException(nameof(titulo));
@@ -52,6 +56,7 @@ namespace cptmApiTeste.Domain.Model.InspecaoAggregate
             this.localizacao = localizacao;
             this.latitude = latitude;
             this.longitude = longitude;
+            this.usuarioId = usuarioId;
         }
 
         public Inspecao()
@@ -60,6 +65,7 @@ namespace cptmApiTeste.Domain.Model.InspecaoAggregate
             descricao = string.Empty;
             photo = Array.Empty<byte>();
             localizacao = null;
+            usuarioId = null;
         }
     }
 }
