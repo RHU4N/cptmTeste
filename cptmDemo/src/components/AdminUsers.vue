@@ -6,7 +6,8 @@
       <div class="create-user-box">
         <h3>Criar Novo Usuário</h3>
         <input v-model="novoUsuarioNome" type="text" placeholder="Nome do usuário" />
-        <select v-model="novoUsuarioStatus">
+        <input v-model="novoUsuarioSenha" type="password" placeholder="Senha" />
+        <select v-model="novoUsuarioRole">
           <option value="user">User</option>
           <option value="admin">Admin</option>
         </select>
@@ -28,7 +29,7 @@
             <tr v-for="u in usuarios" :key="u.id">
               <td>{{ u.nome }}</td>
               <td>
-                <select v-model="u.permissao">
+                <select v-model="u.role" @change="atualizarRole(u)">
                   <option value="user">User</option>
                   <option value="admin">Admin</option>
                 </select>
@@ -45,48 +46,69 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
-import AppHeader from "../components/AppHeader.vue"
+import { reactive, ref, onMounted } from 'vue'
+import * as userApi from '../services/userApi'
 
-// Lista de usuários (poderíamos receber do Admin.vue)
-const usuarios = reactive([
-  { id:1, nome:'user1', permissao:'user' },
-  { id:2, nome:'user2', permissao:'user' },
-  { id:3, nome:'user3', permissao:'admin' },
-])
+const usuarios = reactive([])
 
-// Campos do formulário
 const novoUsuarioNome = ref('')
-const novoUsuarioPer = ref('user')
+const novoUsuarioSenha = ref('')
+const novoUsuarioRole = ref('user')
 
-// Criar usuário
-function criarUsuario(){
-  if(!novoUsuarioNome.value.trim()){
-    alert("Digite um nome válido")
+async function carregarUsuarios(){
+  try{
+    const data = await userApi.getUsers()
+    usuarios.splice(0, usuarios.length, ...data.map(u => ({ id: u.id, nome: u.username, role: u.role })))
+  }catch(err){
+    console.error(err)
+    alert('Falha ao buscar usuários: ' + (err.message || err))
+  }
+}
+
+onMounted(() => {
+  carregarUsuarios()
+})
+
+async function criarUsuario(){
+  if(!novoUsuarioNome.value.trim() || !novoUsuarioSenha.value){
+    alert('Nome e senha são obrigatórios')
     return
   }
-  const id = usuarios.length ? Math.max(...usuarios.map(u=>u.id))+1 : 1
-  usuarios.push({
-    id,
-    nome: novoUsuarioNome.value,
-    status: novoUsuarioPer.value
-  })
-  novoUsuarioNome.value = ''
-  novoUsuarioPer.value = 'user'
-}
 
-// Remover usuário
-function removerUsuario(usuario){
-  if(confirm(`Deseja remover ${usuario.nome}?`)){
-    const index = usuarios.findIndex(u => u.id === usuario.id)
-    if(index !== -1) usuarios.splice(index,1)
+  try{
+    await userApi.createUser(novoUsuarioNome.value.trim(), novoUsuarioSenha.value, novoUsuarioRole.value)
+    novoUsuarioNome.value = ''
+    novoUsuarioSenha.value = ''
+    novoUsuarioRole.value = 'user'
+    await carregarUsuarios()
+    alert('Usuário criado com sucesso')
+  }catch(err){
+    console.error(err)
+    alert('Falha ao criar usuário: ' + (err.message || err))
   }
 }
 
-// Voltar para a tela inicial do admin
-function voltarTelaInicial(){
-  // aqui você pode emitir evento ou alterar a flag no Admin.vue
-  alert("Voltar à tela inicial do Admin")
+async function atualizarRole(usuario){
+  try{
+    await userApi.updateUserRole(usuario.id, usuario.role)
+    alert('Permissão atualizada')
+  }catch(err){
+    console.error(err)
+    alert('Falha ao atualizar permissão: ' + (err.message || err))
+    await carregarUsuarios()
+  }
+}
+
+async function removerUsuario(usuario){
+  if(!confirm(`Deseja remover ${usuario.nome}?`)) return
+  try{
+    await userApi.deleteUser(usuario.id)
+    await carregarUsuarios()
+    alert('Usuário removido')
+  }catch(err){
+    console.error(err)
+    alert('Falha ao remover usuário: ' + (err.message || err))
+  }
 }
 </script>
 

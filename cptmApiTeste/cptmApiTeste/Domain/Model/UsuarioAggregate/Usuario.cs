@@ -45,5 +45,10 @@ namespace cptmApiTeste.Domain.Model.UsuarioAggregate
         {
             password = novaSenhaHash ?? throw new ArgumentNullException(nameof(novaSenhaHash));
         }
+
+        public void AtualizarRole(string novaRole)
+        {
+            role = novaRole ?? throw new ArgumentNullException(nameof(novaRole));
+        }
     }
 }

@@ -19,23 +19,6 @@
           <AppButton :icon="inspecaoIcon" @click="abrirFormularioNovaInspecao">Inspeção</AppButton>
           <AppButton :icon="historicoIcon" @click="abrindoHistorico = true">Histórico</AppButton>
           <AppButton :icon="adminIcon" @click="abrindoAdminUsers = true">Admin</AppButton>
-          <AppButton :icon="logsIcon" @click="abrindoLogs = true">Logs</AppButton>
-          <AppButton :icon="chamadosIcon" @click="abrindoChamados = true">Chamados</AppButton>
-        </div>
-
-        <!-- Mapa + Lista de usuários -->
-        <div class="mapa-lista">
-          <div class="mapa">
-            <Mapa :usuarios="usuarios" :admin-loc="adminLoc" />
-          </div>
-          <div class="lista-usuarios">
-            <h3>Inspetores</h3>
-            <ul>
-              <li v-for="u in usuarios" :key="u.id">
-                {{ u.nome }} - <span :class="u.status">{{ u.status }}</span>
-              </li>
-            </ul>
-          </div>
         </div>
 
         <!-- Lista de inspeções -->
@@ -71,10 +54,6 @@
         :usuarios="usuarios"
         @fechar="abrindoAdminUsers = false"
       />
-
-      <!-- Outras telas -->
-      <div v-if="abrindoLogs"><p>Tela de logs</p></div>
-      <div v-if="abrindoChamados"><p>Tela de chamados</p></div>
     </main>
   </div>
 </template>
@@ -87,7 +66,6 @@ import InspectionList from "../components/InspectionList.vue"
 import InspectionForm from "../components/InspectionForm.vue"
 import Historico from "./Historico.vue"
 import AdminUsers from "./AdminUsers.vue"
-import Mapa from "../components/mapa.vue"
 import { clearAuthSession } from "../services/authApi"
 
 const emit = defineEmits(["logout"])
@@ -107,15 +85,11 @@ import {
 import inspecaoIcon from "../assets/inspecao.png"
 import historicoIcon from "../assets/historico.png"
 import adminIcon from "../assets/admin.jpg"
-import logsIcon from "../assets/logs.png"
-import chamadosIcon from "../assets/chamados.png"
 
 // Flags
 const abrindoFormulario = ref(false)
 const abrindoHistorico = ref(false)
 const abrindoAdminUsers = ref(false)
-const abrindoLogs = ref(false)
-const abrindoChamados = ref(false)
 const carregando = ref(false)
 const salvando = ref(false)
 const erro = ref("")
@@ -126,7 +100,7 @@ const inspecoes = ref([])
 function mapInspecaoApi(item) {
   return {
     ...item,
-    usuario: item.usuario || "admin",
+    usuario: item.usuarioUsername || item.usuario || "-",
   }
 }
 
@@ -160,16 +134,6 @@ const usuarios = reactive([
   { id:3, nome:'user2', status:'offline', coords:[-23.55252, -46.635308] },
   { id:4, nome:'user3', status:'online', coords:[-23.55352, -46.636308] },
 ])
-
-// Admin loc
-const adminLoc = ref(null)
-if(navigator.geolocation){
-  navigator.geolocation.getCurrentPosition(pos=>{
-    adminLoc.value = [pos.coords.latitude, pos.coords.longitude]
-  }, ()=> {
-    adminLoc.value = [-23.55052, -46.633308]
-  })
-}
 
 // ---------------- Funções ----------------
 function abrirConfigs() { alert("Abrir configurações") }
@@ -228,8 +192,6 @@ const tituloHeader = computed(()=>{
   if(abrindoFormulario.value) return "Formulário de Inspeção"
   if(abrindoHistorico.value) return "Histórico de Inspeções"
   if(abrindoAdminUsers.value) return "Gerenciamento de Usuários"
-  if(abrindoLogs.value) return "Logs"
-  if(abrindoChamados.value) return "Chamados"
   return "Bem-vindo, Admin"
 })
 
@@ -238,8 +200,6 @@ function voltarTelaInicial(){
   fecharFormulario()
   abrindoHistorico.value=false
   abrindoAdminUsers.value=false
-  abrindoLogs.value=false
-  abrindoChamados.value=false
 }
 </script>
 
@@ -257,18 +217,9 @@ function voltarTelaInicial(){
 .intro-text{ font-size:1rem; color:#333; margin-bottom:15px; text-align:center; }
 .button-group{ display:flex; flex-wrap:wrap; gap:15px; margin-bottom:20px; justify-content:center; }
 
-/* Mapa + Lista */
-.mapa-lista{ display:flex; flex-direction:column; gap:15px; margin-bottom:20px; height:300px; }
-.mapa{ flex:0 0 60%; height:100%; }
-.lista-usuarios{ flex:0 0 40%; background:#eee; padding:10px; overflow-y:auto; }
-.lista-usuarios li{ list-style:none; margin-bottom:5px; }
-.online{ color:green; }
-.offline{ color:red; }
-
 @media(min-width:768px){
   .admin-content{ padding:30px; }
   .button-group{ gap:25px; }
   .intro-text{ font-size:1.2rem; }
-  .mapa-lista{ flex-direction:row; height:300px; }
 }
 </style>
