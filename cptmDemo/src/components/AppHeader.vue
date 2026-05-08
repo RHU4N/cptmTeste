@@ -74,3 +74,4 @@ const props = defineProps({ title: { type: String, default: "Bem-vindo" } })
 .logout-btn:hover{ background: rgba(255,255,255,0.2); }
 
 .logout-btn:hover{ background: rgba(255,255,255,0.2); }
+</style>
