@@ -69,7 +69,7 @@ namespace cptmApiTeste.Controllers
             {
                 token = token,
                 username = usuario.username,
-                role = usuario.role,
+                role = "user",
                 expiresAtUtc = expiresAtUtc
             });
         }
@@ -122,7 +122,7 @@ namespace cptmApiTeste.Controllers
             {
                 token = token,
                 username = usuario.username,
-                role = usuario.role,
+                role = string.Equals(usuario.role?.Trim(), "admin", StringComparison.OrdinalIgnoreCase) ? "admin" : "user",
                 expiresAtUtc = expiresAtUtc
             });
         }

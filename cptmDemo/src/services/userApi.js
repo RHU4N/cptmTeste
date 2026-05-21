@@ -12,8 +12,13 @@ function authHeaders() {
   }
 }
 
-export async function getUsers() {
-  const res = await fetch(USERS_URL, { headers: authHeaders() })
+export async function getUsers(filters = {}) {
+  const params = new URLSearchParams()
+  if (filters.role) params.append('role', filters.role)
+  if (filters.search) params.append('search', filters.search)
+
+  const url = params.toString() ? `${USERS_URL}?${params.toString()}` : USERS_URL
+  const res = await fetch(url, { headers: authHeaders() })
   if (!res.ok) throw new Error(await res.text())
   return res.json()
 }

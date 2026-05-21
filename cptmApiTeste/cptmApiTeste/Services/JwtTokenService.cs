@@ -28,12 +28,16 @@ namespace cptmApiTeste.Services
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expiresAtUtc = DateTime.UtcNow.AddMinutes(expiresMinutes);
 
+            var normalizedRole = string.Equals(usuario.role?.Trim(), "admin", StringComparison.OrdinalIgnoreCase)
+                ? "admin"
+                : "user";
+
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, usuario.username),
                 new Claim(ClaimTypes.Name, usuario.username),
                 new Claim(ClaimTypes.NameIdentifier, usuario.id.ToString()),
-                new Claim(ClaimTypes.Role, usuario.role),
+                new Claim(ClaimTypes.Role, normalizedRole),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

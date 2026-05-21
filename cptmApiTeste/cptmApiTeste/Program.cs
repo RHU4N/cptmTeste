@@ -109,16 +109,29 @@ END;");
     {
         if (HasIdentityPasswordHash(user.password))
         {
-            continue;
+            // continua para checar role também
         }
 
         if (string.IsNullOrWhiteSpace(user.password))
         {
-            continue;
+            // continua para checar role também
         }
 
-        user.AtualizarSenha(passwordHasher.HashPassword(user, user.password));
-        usersUpdated = true;
+        if (!string.IsNullOrWhiteSpace(user.password) && !HasIdentityPasswordHash(user.password))
+        {
+            user.AtualizarSenha(passwordHasher.HashPassword(user, user.password));
+            usersUpdated = true;
+        }
+
+        var normalizedRole = string.Equals(user.role?.Trim(), "admin", StringComparison.OrdinalIgnoreCase)
+            ? "admin"
+            : "user";
+
+        if (!string.Equals(user.role, normalizedRole, StringComparison.Ordinal))
+        {
+            user.AtualizarRole(normalizedRole);
+            usersUpdated = true;
+        }
     }
 
     var operadorExists = context.Usuarios.Count(x => x.username == "operador") > 0;

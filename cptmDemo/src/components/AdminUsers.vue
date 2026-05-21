@@ -17,6 +17,16 @@
       <!-- Lista de usuários existentes -->
       <div class="users-list-box">
         <h3>Usuários Cadastrados</h3>
+          <div class="users-filters">
+            <input v-model="filtroSearch" type="text" placeholder="Pesquisar usuário" />
+            <select v-model="filtroRole">
+              <option value="">Todos</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button @click="carregarUsuarios">Filtrar</button>
+            <button @click="limparFiltro">Limpar</button>
+          </div>
         <table>
           <thead>
             <tr>
@@ -54,15 +64,23 @@ const usuarios = reactive([])
 const novoUsuarioNome = ref('')
 const novoUsuarioSenha = ref('')
 const novoUsuarioRole = ref('user')
+const filtroRole = ref('')
+const filtroSearch = ref('')
 
 async function carregarUsuarios(){
   try{
-    const data = await userApi.getUsers()
+    const data = await userApi.getUsers({ role: filtroRole.value, search: filtroSearch.value })
     usuarios.splice(0, usuarios.length, ...data.map(u => ({ id: u.id, nome: u.username, role: u.role })))
   }catch(err){
     console.error(err)
     alert('Falha ao buscar usuários: ' + (err.message || err))
   }
+}
+
+function limparFiltro(){
+  filtroRole.value = ''
+  filtroSearch.value = ''
+  carregarUsuarios()
 }
 
 onMounted(() => {

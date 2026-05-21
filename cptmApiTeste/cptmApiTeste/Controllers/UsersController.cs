@@ -22,10 +22,23 @@ namespace cptmApiTeste.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? role = null, [FromQuery] string? search = null)
         {
-            var users = await _context.Usuarios
-                .AsNoTracking()
+            var query = _context.Usuarios.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                var normalizedRole = NormalizeRole(role);
+                query = query.Where(u => u.role.ToLower() == normalizedRole);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var normalizedSearch = search.Trim().ToLower();
+                query = query.Where(u => u.username.ToLower().Contains(normalizedSearch));
+            }
+
+            var users = await query
                 .Select(u => new { id = u.id, username = u.username, role = u.role })
                 .ToListAsync();
 
@@ -55,7 +68,7 @@ namespace cptmApiTeste.Controllers
             }
 
             var hash = _passwordHasher.HashPassword(null!, dto.password);
-            var user = new Usuario(username, hash, dto.role ?? "user");
+            var user = new Usuario(username, hash, NormalizeRole(dto.role));
 
             _context.Usuarios.Add(user);
             await _context.SaveChangesAsync();
@@ -74,7 +87,7 @@ namespace cptmApiTeste.Controllers
             var user = await _context.Usuarios.FindAsync(id);
             if (user is null) return NotFound();
 
-            user.AtualizarRole(dto.role ?? "user");
+            user.AtualizarRole(NormalizeRole(dto.role));
             await _context.SaveChangesAsync();
             return NoContent();
         }
@@ -88,6 +101,13 @@ namespace cptmApiTeste.Controllers
             _context.Usuarios.Remove(user);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        private static string NormalizeRole(string? role)
+        {
+            return string.Equals(role?.Trim(), "admin", StringComparison.OrdinalIgnoreCase)
+                ? "admin"
+                : "user";
         }
     }
 }
