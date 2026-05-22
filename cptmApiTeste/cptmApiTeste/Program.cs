@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Oracle.ManagedDataAccess.Client;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -16,10 +17,10 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "cptm-api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "cptm-web";
 var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "MinhaChaveSecretaMuitoForteESegura12345";
 var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
+var connectionString = ResolveConnectionString(builder.Configuration);
 
 builder.Services.AddDbContext<ConectContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? "Data Source=localhost:1521/XEPDB1;User ID=RHUAN;Password=root"));
+    options.UseOracle(connectionString));
 
 // Add services to the container.
 
@@ -175,4 +176,30 @@ static bool HasIdentityPasswordHash(string value)
 
     return value.StartsWith("AQAAAA", StringComparison.Ordinal)
         && Regex.IsMatch(value, "^[A-Za-z0-9+/=]+$");
+}
+
+static string ResolveConnectionString(IConfiguration configuration)
+{
+    var localConnection = configuration.GetConnectionString("LocalConnection")
+        ?? "Data Source=localhost:1521/XEPDB1;User ID=RHUAN;Password=root;Connection Timeout=3";
+    var dockerConnection = configuration.GetConnectionString("DockerConnection")
+        ?? "Data Source=localhost:1522/XEPDB1;User ID=RHUAN;Password=root;Connection Timeout=3";
+
+    return CanOpenOracleConnection(localConnection)
+        ? localConnection
+        : dockerConnection;
+}
+
+static bool CanOpenOracleConnection(string connectionString)
+{
+    try
+    {
+        using var connection = new OracleConnection(connectionString);
+        connection.Open();
+        return true;
+    }
+    catch
+    {
+        return false;
+    }
 }

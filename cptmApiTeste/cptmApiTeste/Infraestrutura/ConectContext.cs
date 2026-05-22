@@ -13,16 +13,6 @@ namespace cptmApiTeste.Infraestrutura
         public DbSet<Inspecao> InspecaoDTO { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
-            {
-                optionsBuilder.UseOracle("Data Source=localhost:1521/XEPDB1;User ID=RHUAN; Password=root");
-            }
-
-            //"Data Source=MEU_HOST:1521/MEU_SERVICO;User Id=MEU_USUARIO;Password=MINHA_SENHA;"
-        }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
            modelBuilder.Entity<Inspecao>().ToTable("INSPECAO");

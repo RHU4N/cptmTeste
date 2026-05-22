@@ -26,12 +26,14 @@ O projeto permite:
 - **Frontend:** Vue 3, Vite, vite-plugin-pwa, Leaflet
 - **Backend:** ASP.NET Core, Entity Framework Core, JWT Bearer
 - **Banco de dados:** Oracle
+- **Banco de apoio em Docker:** Oracle XE com usuário `RHUAN` e senha `root`
 
 ## Pré-requisitos
 
 - Node.js 20+ e npm
 - .NET SDK 10
 - Oracle Database acessível pela connection string da API
+- Docker e Docker Compose, caso queira subir o banco localmente via container
 
 ## Configuração
 
@@ -45,8 +47,13 @@ A API usa por padrão:
 
 - porta `http://localhost:5085`
 - Swagger em ambiente de desenvolvimento
-- conexão Oracle definida em `ConnectionStrings:DefaultConnection`
+- conexão Oracle tentando primeiro `ConnectionStrings:LocalConnection` e depois `ConnectionStrings:DockerConnection`
 - JWT configurado em `Jwt`
+
+Se o Oracle local não estiver disponível, a API usa automaticamente o container Docker na porta `1522`.
+Isso não inicia o Docker sozinho: o container precisa estar em execução com `docker compose up -d oracle-db`.
+Depois disso, a API cai para o banco em Docker quando o Oracle local não responder.
+Isso permite subir só o banco em Docker, sem precisar containerizar a API agora.
 
 Ao subir a aplicação, as migrations são aplicadas automaticamente.
 
@@ -80,6 +87,25 @@ VITE_API_BASE_URL=http://localhost:5085
 cd cptmApiTeste
 dotnet run --project cptmApiTeste/cptmApiTeste.csproj --launch-profile http
 ```
+
+### Banco em Docker
+
+Na raiz do repositório:
+
+```bash
+docker compose up -d oracle-db
+```
+
+O container sobe com:
+
+- host `localhost`
+- porta `1522`
+- service name `XEPDB1`
+- usuário `RHUAN`
+- senha `root`
+
+Depois disso, a API passa a se conectar automaticamente ao Docker se o Oracle local não responder.
+Esse modo é útil quando cada integrante já roda a API localmente e só precisa do banco pronto.
 
 ### Frontend
 
