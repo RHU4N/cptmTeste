@@ -3,11 +3,88 @@
 ## Índice
 1. [Preparação do Ambiente](#preparação)
 2. [Iniciando os Serviços](#iniciando)
-3. [Verificação da Instalação PWA](#verificação-pwa)
-4. [Testes de Funcionalidade Offline](#testes-offline)
-5. [Testes de Sincronização](#testes-sincronização)
-6. [Testes de Upload de Fotos](#testes-fotos)
-7. [Checklist Completo](#checklist)
+3. [Fluxo Rápido de Regressão](#fluxo-rapido)
+4. [Verificação da Instalação PWA](#verificação-pwa)
+5. [Testes de Funcionalidade Offline](#testes-offline)
+6. [Testes de Sincronização](#testes-sincronização)
+7. [Testes de Upload de Fotos](#testes-fotos)
+8. [Checklist Completo](#checklist)
+
+---
+
+## ✅ Fluxo Rápido de Regressão {#fluxo-rapido}
+
+Use este fluxo quando quiser validar rapidamente a aplicação inteira (backend + frontend + regras principais).
+
+### 1) Subir a aplicação
+
+Na pasta `cptmDemo`, execute:
+
+```bash
+npm.cmd run dev:full
+```
+
+**Esperado:**
+- API online em `http://localhost:5085`
+- Frontend online em `http://localhost:5173`
+
+### 2) Login e navegação inicial
+
+1. Abra `http://localhost:5173`
+2. Faça login com um usuário válido
+3. Verifique que a tela inicial carrega sem erro
+
+**Esperado:**
+- Sem erro de autenticação
+- Sem erro de carregamento inicial
+
+### 3) Fluxo de inspeção (usuário comum ou operador)
+
+1. Crie uma nova inspeção com título e descrição
+2. Preencha localização (se aplicável) e salve
+3. Edite a inspeção criada e salve novamente
+4. Confirme que o item atualizado aparece na lista
+
+**Esperado:**
+- Create e update funcionando
+- Inspeção exibida com data/hora correta
+
+### 4) Validação no Admin (autoria correta)
+
+1. Faça logout
+2. Entre com usuário admin
+3. Vá para a tela de Admin
+4. Na lista de inspeções, valide o campo de usuário
+
+**Esperado:**
+- O autor exibido deve ser quem realmente criou a inspeção (ex.: user/operator)
+- Não deve aparecer sempre “admin” para todas as inspeções
+
+### 5) Regressão visual do Admin
+
+Com o admin logado, valide a tela principal:
+
+**Esperado:**
+- Não existem cards de Logs e Chamados
+- Não existe o mapa central na tela principal de Admin
+- Botões principais continuam funcionais (Inspeção, Histórico, Admin)
+
+### 6) Sanidade de exclusão
+
+1. Apague uma inspeção de teste
+2. Recarregue a tela
+
+**Esperado:**
+- Item removido da lista
+- Sem erro no fluxo
+
+### 7) Critério de aceite rápido
+
+Considere o teste aprovado se:
+- Login e navegação funcionam
+- CRUD básico de inspeção funciona
+- Admin mostra autoria real da inspeção
+- Admin não exibe Logs/Chamados e mapa central
 
 ---
 

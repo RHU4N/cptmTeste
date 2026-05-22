@@ -24,9 +24,10 @@ function updateOnlineStatus() {
 // Loader inicial 3 segundos
 onMounted(() => {
   const session = getAuthSession()
-  if (session?.role === "admin") {
+  const role = session?.role?.toLowerCase()
+  if (role === "admin") {
     currentScreen.value = "admin"
-  } else if (session?.role === "user") {
+  } else if (role === "user") {
     currentScreen.value = "user"
   }
 
