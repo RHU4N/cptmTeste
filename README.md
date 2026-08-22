@@ -135,3 +135,70 @@ dotnet build cptmApiTeste.slnx
 - `dotnet build cptmApiTeste.slnx`
 - `dotnet test cptmApiTeste.slnx`
 - `npm run build` em `cptmDemo` após instalar dependências
+
+## API
+
+### Autenticação
+
+```http
+POST /api/Auth/login
+```
+
+Corpo:
+
+```json
+{
+  "username": "operador",
+  "password": "operador123"
+}
+```
+
+O login retorna um JWT. Envie-o nas rotas protegidas:
+
+```text
+Authorization: Bearer seu-token-jwt
+```
+
+Para cadastrar um usuário, use `POST /api/Auth/register` com `username`, `password` e `activationCode`. O código padrão é `1234`, salvo se alterado na configuração.
+
+### Inspeções
+
+Todas as rotas de inspeção exigem autenticação:
+
+| Método   | Rota                      | Descrição                                             |
+| -------- | ------------------------- | ----------------------------------------------------- |
+| `GET`    | `/api/Inspecao`           | Lista inspeções do usuário; administrador lista todas |
+| `GET`    | `/api/Inspecao/{id}`      | Consulta uma inspeção                                 |
+| `GET`    | `/api/Inspecao/{id}/foto` | Retorna a foto da inspeção                            |
+| `POST`   | `/api/Inspecao`           | Cria uma inspeção                                     |
+| `PUT`    | `/api/Inspecao/{id}`      | Atualiza uma inspeção própria                         |
+| `DELETE` | `/api/Inspecao/{id}`      | Exclui uma inspeção própria                           |
+
+Cadastro e atualização usam `multipart/form-data`. Os campos principais são `titulo`, `descricao`, `data`, `localizacao`, `latitude`, `longitude` e `Photo`. No cadastro, a foto é obrigatória; a localização pode ser enviada como texto ou coordenadas válidas.
+
+### Usuários
+
+As rotas de usuários exigem o papel `admin`:
+
+| Método   | Rota                   | Descrição        |
+| -------- | ---------------------- | ---------------- |
+| `GET`    | `/api/Users`           | Lista usuários   |
+| `POST`   | `/api/Users`           | Cria usuário     |
+| `PUT`    | `/api/Users/{id}/role` | Atualiza o papel |
+| `DELETE` | `/api/Users/{id}`      | Remove usuário   |
+
+Os únicos papéis normalizados pela API são `admin` e `user`.
+
+## Modelo de dados
+
+A entidade `Inspecao` é persistida na tabela Oracle `INSPECAO` com título, descrição, data, foto em BLOB, localização, latitude, longitude e usuário proprietário. A entidade `Usuario` é persistida na tabela `USUARIO` com identificador, nome de usuário, senha com hash e papel.
+
+## PWA e modo offline
+
+O frontend usa `vite-plugin-pwa` com atualização automática do service worker. A configuração mantém caches para recursos estáticos, imagens, tiles do OpenStreetMap, reverse geocoding e respostas da API.
+
+Quando a conexão cai, o frontend exibe um banner de offline e mantém alterações de inspeção em uma fila local. Ao recuperar a conexão, as operações pendentes são sincronizadas com a API. Consulte `GUIA_TESTES.md` para validar cache, fila, sincronização, upload e instalação do PWA.
+
+## Configuração segura
+
+Não versione strings de conexão Oracle, segredos JWT ou senhas reais. O projeto contém valores padrão de desenvolvimento em arquivos de configuração; substitua-os por User Secrets, variáveis de ambiente ou configuração protegida antes de qualquer publicação.
